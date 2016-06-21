@@ -66,7 +66,7 @@ class CNNtarget:
     W_shape = [self.hidden_size, self.hidden_size]
 
     # Hidden layers
-    for i in xrange(self.num_hidden):
+    for i in range(self.num_hidden):
       W = tf.get_variable("W" + str(i), shape=W_shape)
       b = tf.get_variable("b" + str(i), shape=b_shape, initializer = tf.constant_initializer(0.0))
 
@@ -142,7 +142,7 @@ class CNNtarget:
     """
     self.input_layer_mats = ["W_input", "b_input"]
     self.hidden_layer_mats = []
-    for i in xrange(self.num_hidden):
+    for i in range(self.num_hidden):
       self.hidden_layer_mats.append("W" + str(i))
       self.hidden_layer_mats.append("b" + str(i))
     self.output_layer_mats = ["W_output", "b_output"]

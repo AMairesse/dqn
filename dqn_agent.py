@@ -16,8 +16,8 @@ def run_dqn():
   num_actions = env.action_space.n
   observation_shape = env.observation_space.shape
 
-  print "num actions: ", num_actions
-  print "observation_shape: ", observation_shape
+  print("num actions: ", num_actions)
+  print("observation_shape: ", observation_shape)
 
   # initialize dqn learning
   dqn = DQN(num_actions, observation_shape, dqn_params, cnn_params)
@@ -54,15 +54,15 @@ def run_dqn():
           reward_sum += reward
 
           if done:
-              print "Episode ", i_episode
-              print "Finished after {} timesteps".format(t+1)
-              print "Reward for this episode: ", reward_sum
+              print("Episode ", i_episode)
+              print("Finished after {} timesteps".format(t+1))
+              print("Reward for this episode: ", reward_sum)
               last_100.append(reward_sum)
-              print "Average reward for last 100 episodes: ", np.mean(last_100)
+              print("Average reward for last 100 episodes: ", np.mean(last_100))
               break
 
           if total_steps % steps_to_update == 0:
-            print "updating target network..."
+            print("updating target network...")
             dqn.update_target()
 
           total_steps += 1

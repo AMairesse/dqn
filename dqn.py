@@ -21,7 +21,7 @@ class DQN:
 
     # initialize network
     self.model = CNNtarget(num_actions, observation_shape, cnn_params)
-    print "model initialized"
+    print("model initialized")
 
   def select_action(self, observation):
     """
@@ -109,7 +109,7 @@ class DQN:
     Gets a random sample of transitions from the replay memory.
 
     """
-    rand_idxs = random.sample(xrange(len(self.memory)), self.mini_batch_size)
+    rand_idxs = random.sample(range(len(self.memory)), self.mini_batch_size)
     mini_batch = []
     for idx in rand_idxs:
       mini_batch.append(self.memory[idx])

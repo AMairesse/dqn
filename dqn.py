@@ -22,7 +22,6 @@ class DQN:
 
         # initialize network
         self.model = CNNtarget(num_actions, observation_shape, cnn_params)
-        print("model initialized")
 
     def select_action(self, observation):
         """

@@ -17,6 +17,10 @@ DEFAULT_NUM_HIDDEN = 3
 DEFAULT_HIDDEN_SIZE = 32
 DEFAULT_NUM_OBSERVATIONS = 4
 
+DEFAULT_DISPLAY = True
+DEFAULT_MONITOR = False
+DEFAULT_VERBOSE = 1
+
 DEFAULT_ID = 0
 
 
@@ -44,6 +48,13 @@ def parse_args():
     parser.add_argument('-hidden_size', default=DEFAULT_HIDDEN_SIZE, help='the hidden size of all layers in the network', type=int)
     parser.add_argument('-num_observations', default=DEFAULT_NUM_OBSERVATIONS, help='the number of observations to pass to the network', type=int)
 
+    group = parser.add_mutually_exclusive_group()
+    group.set_defaults(display=DEFAULT_DISPLAY)
+    group.add_argument('-no-display', dest='display', action='store_false', help='does not display environment during training')
+    group.set_defaults(monitor=DEFAULT_MONITOR)
+    group.add_argument('-monitor', dest='monitor', action='store_true', help='monitor training in "./outputs" (will enable display)')
+    parser.add_argument('-verbose', default=DEFAULT_VERBOSE, help='verbose level (0 = none / 2 = max)', type=int, choices=range(3))
+
     args = parser.parse_args()
 
     run_id = "lr_" + str(args.l) + "_reg_" + str(args.r) + "_h_" + str(args.hidden_size) + "_m_" + str(args.minibatch_size) + "_c_" + str(args.capacity) + "_id_" + str(args.id)
@@ -51,5 +62,6 @@ def parse_args():
     agent_params = {'episodes': args.episodes, 'steps': args.steps, 'steps_to_update': args.update_every, 'environment': args.env, 'run_id': run_id, 'skipping': args.skipping}
     dqn_params = {'memory_capacity': args.capacity, 'epsilon': args.epsilon, 'gamma': args.gamma, 'mini_batch_size': args.minibatch_size}
     cnn_params = {'lr': args.l, 'reg': args.r, 'num_hidden': args.num_hidden, 'hidden_size': args.hidden_size, 'mini_batch_size': args.minibatch_size, 'num_observations': args.num_observations}
+    prog_params = {'display': args.display, 'monitor': args.monitor, 'verbose': args.verbose}
 
-    return agent_params, dqn_params, cnn_params
+    return agent_params, dqn_params, cnn_params, prog_params

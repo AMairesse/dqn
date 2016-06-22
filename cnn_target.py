@@ -169,8 +169,8 @@ class CNNtarget:
 
         """
 
-        loss, prediction_probs = self.session.run(
-            [self.loss, self.predictions],
+        prediction_probs = self.session.run(
+            [self.predictions],
             feed_dict={self.input_placeholder: observation,
                        self.labels_placeholder: np.zeros(len(observation)),
                        self.actions_placeholder: np.zeros((len(observation), self.num_actions))

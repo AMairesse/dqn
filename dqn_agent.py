@@ -45,7 +45,7 @@ def run_dqn():
                     # Only update the network if not in a skipping frame
                     if total_steps % skipping == 0:
                         # update the state
-                        dqn.update_state(action, observation, new_observation, reward, done)
+                        dqn.update_state(action, new_observation, reward, done)
 
                         # train the model
                         dqn.train_step()

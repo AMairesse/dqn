@@ -18,7 +18,7 @@ class DQN:
 
         # memory
         self.memory = deque(maxlen=dqn_params['memory_capacity'])
-        self.observations = deque(maxlen=dqn_params['memory_capacity'])
+        self.observations = np.zeros(self.num_observations*self.observation_shape)
 
         # initialize network
         self.model = CNNtarget(num_actions, observation_shape, cnn_params)
@@ -34,7 +34,7 @@ class DQN:
         """
 
         # First get the observation history
-        obs_with_history = self.get_observation_history(observation)
+        obs_with_history = self.observations
 
         if random.random() < self.epsilon:
             # with epsilon probability select a random action
@@ -47,23 +47,6 @@ class DQN:
 
         return action
 
-    def get_observation_history(self, observation):
-        """
-        Takes an observation as input. Returns the observation with history.
-
-        Args:
-            observation: the raw current state
-
-        """
-        if len(self.observations) == 0:
-            obs = np.zeros(self.num_observations*self.observation_shape)
-            obs[-self.observation_shape:] = observation
-            self.observations.append(obs)
-        else:
-            obs = self.observations[-1]
-
-        return obs
-
     def update_observation_history(self, new_observation):
         """
         Takes an observation as input. Updates the observation history with the latest observation.
@@ -73,27 +56,26 @@ class DQN:
             observation: the raw current state
 
         """
-        new_obs = np.zeros(self.num_observations*self.observation_shape)
-        new_obs[:-self.observation_shape] = self.observations[- 1][self.observation_shape:]
-        new_obs[-self.observation_shape:] = new_observation
+        
+        # First translate history from one "observation_shape"
+        self.observations[0:-1*self.observation_shape] = self.observations[self.observation_shape:]
+        # Then store the last observation to the end
+        self.observations[-1*self.observation_shape:] = new_observation
 
-        self.observations.append(new_obs)
+        return self.observations
 
-        return new_obs
-
-    def update_state(self, action, observation, new_observation, reward, done):
+    def update_state(self, action, new_observation, reward, done):
         """
         Stores the most recent action in the replay memory.
 
         Args:
             action: the action taken
-            observation: the state before the action was taken
             new_observation: the state after the action is taken
             reward: the reward from the action
             done: a boolean for when the episode has terminated
 
         """
-        obs_with_history = self.get_observation_history(observation)
+        obs_with_history = self.observations
         new_obs_with_history = self.update_observation_history(new_observation)
 
         transition = {'action': action,

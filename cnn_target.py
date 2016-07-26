@@ -1,6 +1,7 @@
 import tensorflow as tf
 import numpy as np
 import logging
+from datetime import datetime
 
 
 class CNNtarget:
@@ -9,7 +10,7 @@ class CNNtarget:
 
     """
 
-    def __init__(self, num_actions, observation_shape, params={}, verbose=False):
+    def __init__(self, num_actions, observation_shape, params={}, verbose=False, tensorboard = False):
         """
         Initialize the CNN model with a set of parameters.
 
@@ -18,6 +19,8 @@ class CNNtarget:
 
         """
         self.verbose = verbose
+        self.tensorboard = tensorboard
+        self.tensorboard_step = 0
         self.num_actions = num_actions
 
         # observation shape will be a tuple
@@ -45,66 +48,52 @@ class CNNtarget:
                                                  type tf.float32
 
         """
-        input_placeholder = tf.placeholder(tf.float32, shape=(None, self.observation_shape * self.num_observations))
-        labels_placeholder = tf.placeholder(tf.float32, shape=(None,))
-        actions_placeholder = tf.placeholder(tf.float32, shape=(None, self.num_actions))
+        input_placeholder = tf.placeholder(tf.float32, shape=(None, self.observation_shape * self.num_observations), name = "Input")
+        labels_placeholder = tf.placeholder(tf.float32, shape=(None,), name = "Labels")
+        actions_placeholder = tf.placeholder(tf.float32, shape=(None, self.num_actions), name = "Actions")
 
         return input_placeholder, labels_placeholder, actions_placeholder
 
     def nn(self, input_obs):
         # Input layer
-        W_input_shape = [self.observation_shape * self.num_observations, self.hidden_size]
-        W_input = tf.get_variable("W_input", shape=W_input_shape)
-        b_shape = [1, self.hidden_size]
-        b_input = tf.get_variable("b_input", shape=b_shape, initializer=tf.constant_initializer(0.0))
+        with tf.name_scope('Layer'):
+            W_input_shape = [self.observation_shape * self.num_observations, self.hidden_size]
+            W_input = tf.get_variable("W_input", shape=W_input_shape)
+            b_shape = [1, self.hidden_size]
+            b_input = tf.get_variable("b_input", shape=b_shape, initializer=tf.constant_initializer(0.0))
+            xW = tf.matmul(input_obs, W_input)
+            h = tf.tanh(tf.add(xW, b_input))
 
-        xW = tf.matmul(input_obs, W_input)
-        h = tf.tanh(tf.add(xW, b_input))
-
-        reg = tf.reduce_sum(tf.square(W_input))
+        with tf.name_scope('Regularization'):
+            reg = tf.reduce_sum(tf.square(W_input))
 
         W_shape = [self.hidden_size, self.hidden_size]
 
         # Hidden layers
         for i in range(self.num_hidden):
-            W = tf.get_variable("W" + str(i), shape=W_shape)
-            b = tf.get_variable("b" + str(i), shape=b_shape, initializer=tf.constant_initializer(0.0))
+            with tf.name_scope('Layer'):
+                W = tf.get_variable("W" + str(i), shape=W_shape)
+                b = tf.get_variable("b" + str(i), shape=b_shape, initializer=tf.constant_initializer(0.0))
+                xW = tf.matmul(h, W)
+                h = tf.tanh(tf.add(xW, b))
 
-            xW = tf.matmul(h, W)
-            h = tf.tanh(tf.add(xW, b))
-
-            reg += tf.reduce_sum(tf.square(W))
+            with tf.name_scope('Regularization'):
+                reg += tf.reduce_sum(tf.square(W))
 
         # Output layer
-        W_output_shape = [self.hidden_size, self.num_actions]
-        W_output = tf.get_variable("W_output", shape=W_output_shape)
-        b_output_shape = [1, self.num_actions]
-        b_output = tf.get_variable("b_output", shape=b_output_shape, initializer=tf.constant_initializer(0.0))
+        with tf.name_scope('Layer'):
+            W_output_shape = [self.hidden_size, self.num_actions]
+            W_output = tf.get_variable("W_output", shape=W_output_shape)
+            b_output_shape = [1, self.num_actions]
+            b_output = tf.get_variable("b_output", shape=b_output_shape, initializer=tf.constant_initializer(0.0))
+            hU = tf.matmul(h, W_output)
+            out = tf.add(hU, b_output)
 
-        hU = tf.matmul(h, W_output)
-        out = tf.add(hU, b_output)
-
-        reg += tf.reduce_sum(tf.square(W_output))
-        reg = self.reg * reg
+        with tf.name_scope('Regularization'):
+            reg += tf.reduce_sum(tf.square(W_output))
+            reg = self.reg * reg
 
         return out, reg
-
-    # def conv2d(self, x, W, stride):
-    #   return tf.nn.conv2d(x, W, strides = [1, stride, stride, 1], padding = "SAME")
-
-    # def cnn(self, input_obs):
-    #   # Input placeholer of shape: [batch, in_height, in_width, in_channels]
-
-    #   # W shape is [filter_height, filter_width, in_channels, output_channels]
-    #   W1shape = [2, 1, self.num_observations, self.num_actions]
-    #   W1 = tf.get_variable("W1", shape=W1shape)
-    #   bshape = [1, self.num_actions]
-    #   b1 = tf.get_variable("b1", shape=bshape, initializer = tf.constant_initializer(0.0))
-
-    #   out = self.conv2d(input_obs, W1, 1) + b1
-
-    #   reg = self.reg * (tf.reduce_sum(tf.square(W1)))
-    #   return out, reg
 
     def create_model_trainable(self):
         """
@@ -115,14 +104,23 @@ class CNNtarget:
 
         self.predictions = outputs
 
-        self.q_vals = tf.reduce_sum(tf.mul(self.predictions, self.actions_placeholder), 1)
-        self.loss = tf.reduce_sum(tf.square(self.labels_placeholder - self.q_vals)) + reg
+        with tf.name_scope('CostFunction'):
+            with tf.name_scope('Q_Vals'):
+                self.q_vals = tf.reduce_sum(tf.mul(self.predictions, self.actions_placeholder), 1)
+                reward = tf.reduce_sum(self.q_vals)
+                tf.scalar_summary('Q_vals', reward)
+            with tf.name_scope('Loss'):
+                loss_non_regularized = tf.reduce_sum(tf.square(self.labels_placeholder - self.q_vals))
+                self.loss = loss_non_regularized + reg
+                tf.scalar_summary('Loss (without regularization)', loss_non_regularized)
+                tf.scalar_summary('Regularization', reg)
 
-        #optimizer = tf.train.AdamOptimizer(learning_rate=self.lr)
-        optimizer = tf.train.GradientDescentOptimizer(learning_rate=self.lr)
-        # optimizer = tf.train.RMSPropOptimizer(learning_rate = self.lr)
+        with tf.name_scope('Optimizer'):
+            #optimizer = tf.train.AdamOptimizer(learning_rate=self.lr)
+            optimizer = tf.train.GradientDescentOptimizer(learning_rate=self.lr)
+            # optimizer = tf.train.RMSPropOptimizer(learning_rate = self.lr)
 
-        self.train_op = optimizer.minimize(self.loss)
+            self.train_op = optimizer.minimize(self.loss)
 
     def create_model_target(self):
         """
@@ -153,9 +151,18 @@ class CNNtarget:
         with tf.variable_scope("target") as scope:
             self.create_model_target()
 
+        session = tf.Session()
+
+        # TensorBoard init
+        if self.tensorboard:
+            self.merged_summaries = tf.merge_all_summaries()
+            now = datetime.now().strftime('%Y-%m-%d--%H-%M-%S')
+            self.summary_writer = tf.train.SummaryWriter('./outputs/' + now + '/', session.graph)
+        else:
+            self.summary_writer = None
+
         init = tf.initialize_all_variables()
 
-        session = tf.Session()
         session.run(init)
 
         return session
@@ -201,13 +208,23 @@ class CNNtarget:
         Updates the CNN model with a mini batch of training examples.
 
         """
-
-        loss, _, prediction_probs, q_values = self.session.run(
-            [self.loss, self.train_op, self.predictions, self.q_vals],
-            feed_dict={self.input_placeholder: Xs,
-                       self.labels_placeholder: ys,
-                       self.actions_placeholder: actions
-                      })
+        
+        if self.tensorboard:
+            loss, _, prediction_probs, q_values, summary = self.session.run(
+                [self.loss, self.train_op, self.predictions, self.q_vals, self.merged_summaries],
+                feed_dict={self.input_placeholder: Xs,
+                           self.labels_placeholder: ys,
+                           self.actions_placeholder: actions
+                          })
+            self.summary_writer.add_summary(summary, self.tensorboard_step)
+            self.tensorboard_step = self.tensorboard_step + 1
+        else:
+            loss, _, prediction_probs, q_values = self.session.run(
+                [self.loss, self.train_op, self.predictions, self.q_vals],
+                feed_dict={self.input_placeholder: Xs,
+                           self.labels_placeholder: ys,
+                           self.actions_placeholder: actions
+                          })
 
     def target_update_weights(self):
         """

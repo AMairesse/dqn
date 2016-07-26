@@ -25,7 +25,7 @@ def run_dqn():
         print("observation_shape: ", observation_shape)
 
     # initialize dqn learning
-    dqn = DQN(num_actions, observation_shape, dqn_params, cnn_params)
+    dqn = DQN(num_actions, observation_shape, dqn_params, cnn_params, prog_params)
 
     if monitor:
         env.monitor.start('./outputs/experiment-' + agent_params['run_id'])
@@ -73,7 +73,8 @@ def run_dqn():
 
                     if total_steps % steps_to_update == 0:
                         if verbose > 0:
-                            print("updating target network...")
+                            print("Total steps : ", total_steps)
+                            print("Updating target network...")
                         dqn.update_target()
 
                     total_steps += 1

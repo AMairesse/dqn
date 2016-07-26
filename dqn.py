@@ -8,20 +8,23 @@ from cnn_target import CNNtarget
 
 
 class DQN:
-    def __init__(self, num_actions, observation_shape, dqn_params, cnn_params):
+    def __init__(self, num_actions, observation_shape, dqn_params, cnn_params, prog_params):
         self.num_actions = num_actions
         self.epsilon = dqn_params['epsilon']
         self.gamma = dqn_params['gamma']
         self.mini_batch_size = dqn_params['mini_batch_size']
         self.observation_shape = observation_shape[0]
         self.num_observations = cnn_params['num_observations']
+        self.verbose = prog_params['verbose']
+        self.tensorboard = prog_params['tensorboard']
 
         # memory
         self.memory = deque(maxlen=dqn_params['memory_capacity'])
         self.observations = np.zeros(self.num_observations*self.observation_shape)
 
         # initialize network
-        self.model = CNNtarget(num_actions, observation_shape, cnn_params)
+        self.model = CNNtarget(num_actions, observation_shape, cnn_params,
+                               verbose = self.verbose, tensorboard = self.tensorboard)
 
     def select_action(self, observation):
         """

@@ -20,6 +20,7 @@ DEFAULT_NUM_OBSERVATIONS = 4
 DEFAULT_DISPLAY = True
 DEFAULT_MONITOR = False
 DEFAULT_VERBOSE = 1
+DEFAULT_TENSOR_BOARD = False
 
 DEFAULT_ID = 0
 
@@ -54,6 +55,8 @@ def parse_args():
     group.set_defaults(monitor=DEFAULT_MONITOR)
     group.add_argument('-monitor', dest='monitor', action='store_true', help='monitor training in "./outputs" (will enable display)')
     parser.add_argument('-verbose', default=DEFAULT_VERBOSE, help='verbose level (0 = none / 2 = max)', type=int, choices=range(3))
+    parser.set_defaults(tensorboard=DEFAULT_TENSOR_BOARD)
+    parser.add_argument('-tensorboard', dest='tensorboard', action='store_true', help='enable logging for TensorBoard in "./outputs')
 
     args = parser.parse_args()
 
@@ -62,6 +65,6 @@ def parse_args():
     agent_params = {'episodes': args.episodes, 'steps': args.steps, 'steps_to_update': args.update_every, 'environment': args.env, 'run_id': run_id, 'skipping': args.skipping}
     dqn_params = {'memory_capacity': args.capacity, 'epsilon': args.epsilon, 'gamma': args.gamma, 'mini_batch_size': args.minibatch_size}
     cnn_params = {'lr': args.l, 'reg': args.r, 'num_hidden': args.num_hidden, 'hidden_size': args.hidden_size, 'mini_batch_size': args.minibatch_size, 'num_observations': args.num_observations}
-    prog_params = {'display': args.display, 'monitor': args.monitor, 'verbose': args.verbose}
+    prog_params = {'display': args.display, 'monitor': args.monitor, 'verbose': args.verbose, 'tensorboard': args.tensorboard}
 
     return agent_params, dqn_params, cnn_params, prog_params

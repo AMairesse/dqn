@@ -47,6 +47,7 @@ def run_dqn():
 
                     # execute actin in emulator
                     new_observation, reward, done, _ = env.step(action)
+                    new_observation = new_observation.ravel()
 
                     # Only update the network if not in a skipping frame
                     if total_steps % skipping == 0:

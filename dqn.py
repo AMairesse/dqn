@@ -13,17 +13,19 @@ class DQN:
         self.epsilon = dqn_params['epsilon']
         self.gamma = dqn_params['gamma']
         self.mini_batch_size = dqn_params['mini_batch_size']
-        self.observation_shape = observation_shape[0]
+        self.observation_size = 1
+        for a in observation_shape:
+            self.observation_size = self.observation_size * a
         self.num_observations = cnn_params['num_observations']
         self.verbose = prog_params['verbose']
         self.tensorboard = prog_params['tensorboard']
 
         # memory
         self.memory = deque(maxlen=dqn_params['memory_capacity'])
-        self.observations = np.zeros(self.num_observations*self.observation_shape)
+        self.observations = np.zeros(self.num_observations*self.observation_size)
 
         # initialize network
-        self.model = CNNtarget(num_actions, observation_shape, cnn_params,
+        self.model = CNNtarget(self.num_actions, self.observation_size, cnn_params,
                                verbose = self.verbose, tensorboard = self.tensorboard)
 
     def select_action(self, observation):
@@ -59,10 +61,10 @@ class DQN:
 
         """
         
-        # First translate history from one "observation_shape"
-        self.observations[0:-1*self.observation_shape] = self.observations[self.observation_shape:]
+        # First translate history from one "observation_size"
+        self.observations[0:-1*self.observation_size] = self.observations[self.observation_size:]
         # Then store the last observation to the end
-        self.observations[-1*self.observation_shape:] = new_observation
+        self.observations[-1*self.observation_size:] = new_observation
 
         return self.observations
 

@@ -10,7 +10,7 @@ class CNNtarget:
 
     """
 
-    def __init__(self, num_actions, observation_shape, params={}, verbose=False, tensorboard = False):
+    def __init__(self, num_actions, observation_size, params={}, verbose=False, tensorboard = False):
         """
         Initialize the CNN model with a set of parameters.
 
@@ -23,8 +23,7 @@ class CNNtarget:
         self.tensorboard_step = 0
         self.num_actions = num_actions
 
-        # observation shape will be a tuple
-        self.observation_shape = observation_shape[0]
+        self.observation_size = observation_size
         logging.info('Initialized with params: {}'.format(params))
 
         self.lr = params['lr']
@@ -41,14 +40,14 @@ class CNNtarget:
         """ Adds following nodes to the computational graph
 
         input_placeholder: Input placeholder tensor of shape
-                                             (None, observation_shape), type tf.float32
+                                             (None, observation_size), type tf.float32
         labels_placeholder: Labels placeholder tensor of shape
                                                 (None,), type tf.float32
         actions_placeholder: Actions mask placeholder (None, self.num_actions),
                                                  type tf.float32
 
         """
-        input_placeholder = tf.placeholder(tf.float32, shape=(None, self.observation_shape * self.num_observations), name = "Input")
+        input_placeholder = tf.placeholder(tf.float32, shape=(None, self.observation_size * self.num_observations), name = "Input")
         labels_placeholder = tf.placeholder(tf.float32, shape=(None,), name = "Labels")
         actions_placeholder = tf.placeholder(tf.float32, shape=(None, self.num_actions), name = "Actions")
 
@@ -57,7 +56,7 @@ class CNNtarget:
     def nn(self, input_obs):
         # Input layer
         with tf.name_scope('Layer'):
-            W_input_shape = [self.observation_shape * self.num_observations, self.hidden_size]
+            W_input_shape = [self.observation_size * self.num_observations, self.hidden_size]
             W_input = tf.get_variable("W_input", shape=W_input_shape)
             b_shape = [1, self.hidden_size]
             b_input = tf.get_variable("b_input", shape=b_shape, initializer=tf.constant_initializer(0.0))
